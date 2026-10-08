@@ -58,6 +58,47 @@ redcap_visits %>%
 
 
 #' #################################################################
+#' manipulating data structure
+#' #################################################################
+
+redcap_visits %>% 
+  group_by(season) %>% 
+  summarise(unique_subject_count = n_distinct(subject_id),
+            visit_count = n(),
+            positive_scv2_test_count = sum(scv2_positive, na.rm = TRUE))
+
+redcap_visits %>% 
+  group_by(season) %>% 
+  summarise(unique_subject_count = n_distinct(subject_id),
+            visit_count = n(),
+            positive_scv2_test_count = sum(scv2_positive, na.rm = TRUE)) %>% 
+  pivot_longer(cols = -season, names_to = "season_feature", values_to = "count")
+
+redcap_visits %>% 
+  group_by(season) %>% 
+  summarise(unique_subject_count = n_distinct(subject_id),
+            visit_count = n(),
+            positive_scv2_test_count = sum(scv2_positive, na.rm = TRUE)) %>% 
+  pivot_longer(cols = -season, names_to = "season_feature", values_to = "count") %>%
+  ggplot(data = .) +
+  geom_col(aes(x = season, y = count, fill = season_feature)) +
+  facet_wrap(facets = ~ season_feature, labeller = as_labeller(c("positive_scv2_test_count" = "SCV2 Count", "unique_subject_count" = "Subject Count", "visit_count" = "Visit Count"))) +
+  scale_fill_brewer(palette = "Spectral", labels = c("positive_scv2_test_count" = "SCV2 Count", "unique_subject_count" = "Subject Count", "visit_count" = "Visit Count")) +
+  theme_bw() +
+  theme(legend.position = "bottom", axis.text.x = element_text(angle = 90)) +
+  labs(x = "", y = "Count", fill = "") +
+  guides(fill = guide_legend(nrow = 2))
+
+redcap_visits %>% 
+  group_by(season) %>% 
+  summarise(unique_subject_count = n_distinct(subject_id),
+            visit_count = n(),
+            positive_scv2_test_count = sum(scv2_positive, na.rm = TRUE)) %>% 
+  pivot_longer(cols = -season, names_to = "season_feature", values_to = "count") %>%
+  pivot_wider(id_cols = season_feature, names_from = season, values_from = count)
+
+
+#' #################################################################
 #' explore outcome variable with a plot
 #' #################################################################
 
