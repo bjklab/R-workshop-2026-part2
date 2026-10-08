@@ -1,6 +1,7 @@
-# install the tidyverse packages, as well as modeling output functions
+# install the tidyverse packages, as well as modeling output and figure-assembly functions
 install.packages('tidyverse')
 install.packages('broom')
+install.packages('patchwork')
 
 # install penguin data
 # install.packages('palmerpenguins')

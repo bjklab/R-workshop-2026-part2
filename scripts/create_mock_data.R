@@ -19,7 +19,7 @@ mock_redcap_subjects <- tibble(record_id = 1:100) %>%
   mutate(rural_residence = rbernoulli(n = 100, p = 0.40)) %>%
   mutate(diabetes_mellitus = rbernoulli(n = 100, p = 0.30)) %>%
   mutate(copd = map_lgl(.x = smoker, .f = ~ rbernoulli(n = 1, p = 0.50 * .x + 0.1))) %>%
-  mutate(cad = map2_lgl(.x = smoker, .y = ~ diabetes_mellitus, .f = ~ rbernoulli(n = 1, p = (0.30 * .y) + (0.30 * .x) + 0.1)))
+  mutate(cad = map2_lgl(.x = smoker, .y = diabetes_mellitus, .f = ~ rbernoulli(n = 1, p = (0.30 * .y) + (0.30 * .x) + 0.1)))
 
 mock_redcap_subjects
 
@@ -55,5 +55,41 @@ mock_redcap_visits
 
 mock_redcap_visits %>%
   write_csv("data/mock_redcap_visits.csv")
+
+
+# add seasonal risk of SCV2
+
+library(lubridate)
+
+get_season <- function(input_date) {
+  # Convert date to a numeric MMDD format (e.g., April 1st becomes 401)
+  mmdd <- month(input_date) * 100 + day(input_date)
+  
+  # Cut into seasonal bins based on calendar days
+  # Winter crosses years, so we set it as the default fallback
+  cut(mmdd,
+      breaks = c(0, 319, 620, 921, 1220, 1300),
+      labels = c("Winter", "Spring", "Summer", "Autumn", "Winter"),
+      right = TRUE)
+}
+
+# Example Usage:
+test_dates <- as.Date(c("2026-01-15", "2026-04-10", "2026-07-22", "2026-10-31"))
+get_season(test_dates)
+get_season(test_dates) %>%
+  as.numeric()
+
+mock_redcap_visits_scv2 <- mock_redcap_visits %>%
+  mutate(season = get_season(visit_date)) %>%
+  mutate(scv2_positive = map_lgl(.x = season, .f = ~ rbernoulli(n = 1, p = 0.2 * (as.numeric(.x) %% 2) + 0.01))) %>%
+  #count(scv2_positive)
+  # seasonal effect
+  rowwise() %>%
+  mutate(measured_QOL = ifelse(season == "Winter" & measured_QOL >= 2, measured_QOL - 1, measured_QOL)) %>%
+  # SCV2 effect
+  mutate(measured_QOL = ifelse(scv2_positive == TRUE & measured_QOL >= 2, measured_QOL - 2, measured_QOL))
+
+mock_redcap_visits_scv2 %>%
+  write_csv("data/mock_redcap_visits_scv2.csv")
 
 
