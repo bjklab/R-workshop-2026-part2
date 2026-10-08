@@ -191,40 +191,211 @@ redcap_subjects %>%
 
 
 #' #################################################################
-#' join subject and visit data & explore outcome ~ exposure associations
+#' plots to explore outcome ~ exposure associations
 #' #################################################################
 
-redcap_subjects %>%
+# rural plots
+qol_v_rural_box <- redcap_subjects %>%
   full_join(redcap_visits, by = "subject_id") %>% 
   ggplot(data = .) +
   geom_boxplot(aes(x = rural_residence, y = measured_QOL, fill = rural_residence))
+qol_v_rural_box
 
-
-redcap_subjects %>%
+qol_v_rural_box_by_smoker <- redcap_subjects %>%
   left_join(redcap_visits, by = "subject_id") %>% 
   ggplot(data = .) +
   geom_boxplot(aes(x = rural_residence, y = measured_QOL, fill = rural_residence)) +
   facet_wrap(facets = ~ smoker, labeller = label_both)
+qol_v_rural_box_by_smoker
 
-
-redcap_subjects %>%
-  full_join(redcap_visits, by = "subject_id") %>% 
-  group_by(subject_id) %>%
-  summarise(n_visits = n(),
-            median_QOL = median(measured_QOL, na.rm = TRUE),
-            rural_residence = unique(rural_residence)) %>%
+qol_v_rural_box_by_smoker_copd <- redcap_subjects %>%
+  left_join(redcap_visits, by = "subject_id") %>% 
   ggplot(data = .) +
-  geom_point(aes(x = median_QOL, y = n_visits, color = rural_residence))
+  geom_boxplot(aes(x = rural_residence, y = measured_QOL, fill = rural_residence)) +
+  facet_wrap(facets = ~ smoker + copd, labeller = label_both)
+qol_v_rural_box_by_smoker_copd
 
-redcap_subjects %>%
-  full_join(redcap_visits, by = "subject_id") %>% 
-  group_by(subject_id) %>%
-  summarise(n_visits = n(),
-            median_QOL = median(measured_QOL, na.rm = TRUE),
-            rural_residence = unique(rural_residence),
-            smoker = unique(smoker)) %>%
+
+# age plots
+qol_v_age_point <- redcap_subjects %>%
+  mutate(age_years = lubridate::time_length(interval(birth_date, enrollment_date), "years")) %>%
+  left_join(redcap_visits, by = "subject_id") %>% 
   ggplot(data = .) +
-  geom_point(aes(x = median_QOL, y = n_visits, color = rural_residence)) +
-  geom_smooth(method = "lm", aes(x = median_QOL, y = n_visits, color = rural_residence)) +
+  geom_point(aes(x = age_years, y = measured_QOL)) +
+  geom_smooth(aes(x = age_years, y = measured_QOL), method = "lm")
+qol_v_age_point
+
+qol_v_age_point_rural <- redcap_subjects %>%
+  mutate(age_years = lubridate::time_length(interval(birth_date, enrollment_date), "years")) %>%
+  left_join(redcap_visits, by = "subject_id") %>% 
+  ggplot(data = .) +
+  geom_point(aes(x = age_years, y = measured_QOL, color = rural_residence)) +
+  geom_smooth(aes(x = age_years, y = measured_QOL, color = rural_residence), method = "lm")
+qol_v_age_point_rural
+
+qol_v_age_point_smoker_copd <- redcap_subjects %>%
+  mutate(age_years = lubridate::time_length(interval(birth_date, enrollment_date), "years")) %>%
+  left_join(redcap_visits, by = "subject_id") %>% 
+  ggplot(data = .) +
+  geom_point(aes(x = age_years, y = measured_QOL)) +
+  geom_smooth(aes(x = age_years, y = measured_QOL), method = "lm") +
   facet_wrap(facets = ~ smoker, labeller = label_both)
+qol_v_age_point_smoker_copd
+
+
+#' #################################################################
+#' tests and models of outcome ~ exposure associations
+#' #################################################################
+
+# QOL outcome, rural residence exposure
+redcap_subjects %>%
+  full_join(redcap_visits, by = "subject_id") %>% 
+  t.test(measured_QOL ~ rural_residence, data = ., alternative = "two.sided")
+  
+t_test_qol_v_rural <- redcap_subjects %>%
+  full_join(redcap_visits, by = "subject_id") %>% 
+  t.test(measured_QOL ~ rural_residence, data = ., alternative = "two.sided")
+
+t_test_qol_v_rural
+
+t_test_qol_v_rural %>%
+  broom::tidy()
+
+kw_test_qol_v_rural <- redcap_subjects %>%
+  full_join(redcap_visits, by = "subject_id") %>% 
+  kruskal.test(measured_QOL ~ rural_residence, data = .)
+
+kw_test_qol_v_rural
+
+kw_test_qol_v_rural %>%
+  broom::tidy()
+
+lm_qol_v_rural <- redcap_subjects %>%
+  full_join(redcap_visits, by = "subject_id") %>% 
+  lm(measured_QOL ~ rural_residence, data = .)
+
+lm_qol_v_rural
+
+lm_qol_v_rural %>%
+  summary()
+
+lm_qol_v_rural %>%
+  broom::tidy()
+
+lm_qol_v_rural %>%
+  gtsummary::tbl_regression()
+
+
+lm_qol_v_rural_smoker <- redcap_subjects %>%
+  full_join(redcap_visits, by = "subject_id") %>% 
+  lm(measured_QOL ~ rural_residence + smoker, data = .)
+
+lm_qol_v_rural_smoker %>%
+  broom::tidy()
+
+lm_qol_v_rural_smoker %>%
+  gtsummary::tbl_regression()
+
+
+
+
+# QOL outcome, age exposure
+
+lm_qol_v_age <- redcap_subjects %>%
+  mutate(age_years = lubridate::time_length(interval(birth_date, enrollment_date), "years")) %>%
+  full_join(redcap_visits, by = "subject_id") %>% 
+  lm(measured_QOL ~ age_years, data = .)
+
+lm_qol_v_age
+
+lm_qol_v_age %>%
+  summary()
+
+lm_qol_v_age %>%
+  broom::tidy()
+
+lm_qol_v_age %>%
+  gtsummary::tbl_regression()
+
+
+lm_qol_v_age_smoker_copd <- redcap_subjects %>%
+  mutate(age_years = lubridate::time_length(interval(birth_date, enrollment_date), "years")) %>%
+  full_join(redcap_visits, by = "subject_id") %>% 
+  lm(measured_QOL ~ age_years + smoker + copd, data = .)
+
+lm_qol_v_age_smoker_copd %>%
+  broom::tidy()
+
+gt_lm_qol_v_age_smoker_copd <- lm_qol_v_age_smoker_copd %>%
+  gtsummary::tbl_regression() %>%
+  gtsummary::as_gt()
+gt_lm_qol_v_age_smoker_copd
+
+gt_lm_qol_v_age_smoker_copd %>%
+  gtsave(filename = "tables/gt_lm_qol_v_age_smoker_copd.png")
+
+
+#' #################################################################
+#' use patchwork to create a figure comprising multiple plots/tables
+#' https://patchwork.data-imaginist.com/articles/patchwork.html
+#' #################################################################
+
+library(patchwork)
+
+# combine multiple plots
+combined_figure1 <- qol_v_rural_box + (qol_histogram_stacked_by_season / qol_v_age_point) + plot_layout(heights = c(2,1,1), widths = c(1,2,2)) + plot_annotation(tag_levels = 'A')
+combined_figure1
+
+combined_figure1 %>%
+  ggsave(plot = ., filename = "figures/combined_figure1.pdf", height = 8, width = 12, units = "in")
+
+combined_figure1 %>%
+  ggsave(plot = ., filename = "figures/combined_figure1.png", height = 8, width = 12, units = "in", dpi = 600)
+
+
+
+# combine tables and plots
+combined_figure2 <- qol_v_age_point_smoker_copd + gt_lm_qol_v_age_smoker_copd + plot_layout(heights = c(1,1), widths = c(2,1))
+combined_figure2
+
+combined_figure2 %>%
+  ggsave(plot = ., filename = "figures/combined_figure2.pdf", height = 8, width = 12, units = "in")
+
+combined_figure2 %>%
+  ggsave(plot = ., filename = "figures/combined_figure2.png", height = 8, width = 12, units = "in", dpi = 600)
+
+
+
+#' #################################################################
+#' revisiting model objects
+#' #################################################################
+
+lm_qol_v_age %>%
+  summary()
+
+lm_qol_v_age %>%
+  broom::tidy()
+
+lm_qol_v_age %>%
+  broom::glance()
+
+lm_qol_v_age %>%
+  broom::augment()
+
+lm_qol_v_age %>%
+  broom::augment(newdata = tibble(age_years = seq(10,99,1)), interval = "confidence", conf.level = 0.95)
+
+lm_qol_v_age %>%
+  broom::augment(newdata = tibble(age_years = seq(10,99,1)), interval = "prediction", conf.level = 0.95)
+
+ggplot(lm_qol_v_age, aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Residual vs. Fitted Values Plot",
+    x = "Fitted Values",
+    y = "Residuals"
+  ) +
+  theme_bw()
+
 
