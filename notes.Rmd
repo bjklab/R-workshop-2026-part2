@@ -1,5 +1,5 @@
 ---
-title: "Notes"
+pagetitle: "Notes"
 output: html_document
 ---
 
