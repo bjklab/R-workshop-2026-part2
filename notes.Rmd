@@ -1,0 +1,20 @@
+---
+title: "Notes"
+output: html_document
+---
+
+# Notes from Presentation  
+
+## Prediction Options  
+
+- e.g., `broom::augment(..., interval = "confidence")` vs `broom::augment(..., interval = "prediction")`  
+
+| Feature |	interval = "confidence" |	interval = "prediction" |
+| --- | --- | --- |
+| What it measures | Uncertainty around the mean outcome (\(E[Y\Vert{}X]\)) for a given \(X\). |	Uncertainty around a single new individual observation (\(Y\)) for a given \(X\). |
+| Width |	Narrower. |	Wider. |
+| Sources of Variance |	Only accounts for the uncertainty in the model parameters (\(\beta \) coefficients). | Accounts for parameter uncertainty PLUS the random residual variance (\(\sigma ^{2}\)) of individuals. |
+| Effect of Sample Size (\(n\)) |	Shrinks toward zero width as the sample size approaches infinity. |	Will never shrink to zero; it is bounded by the natural variance (\(\sigma \)) of the data. |
+  
+  
+  
