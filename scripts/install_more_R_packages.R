@@ -19,6 +19,7 @@ install.packages('haven')
 
 # install helpful packages for working with googledrive files
 install.packages('googledrive')
+install.packages('googlesheets4')
 
 # optional packages for self-directed learning exercises
 install.packages('medicaldata') # demonstration data sets
